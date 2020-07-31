@@ -1,12 +1,14 @@
 import time
 from typing import List
 
+from bs4.element import Tag
+
 from .types.Team import Team
 from .types.Matches import Matches
 from .utils.api import get_page
 
 
-def get_team(match, info_teams_id: List, num_team: int) -> Team:
+def get_team(match: Tag, info_teams_id: List, num_team: int) -> Team:
     """
     Function that seeks and treats the information of a team.
 
@@ -66,13 +68,14 @@ def get_matches() -> List[Matches]:
     matches: List[Matches]
     """
     soup = get_page('/matches')
-    rodadas = soup.findAll('a', {'class': 'match a-reset'})
+    rodadas: List[Tag] = soup.findAll('a', {'class': 'match a-reset'})
 
     matches: List[Matches] = []
     for game in rodadas:
         id_ = int(game['href'].split('/')[2])
-        date_hour = game.findAll('div', {'class': 'matchTime'})[0]
-        event = game.findAll(
+        date_hour: Tag = game.findAll('div', {'class': 'matchTime'})[0]
+        date_unix: str = ''
+        event: List[Tag] = game.findAll(
             'div', {'class': 'matchEventName gtSmartphone-only'})
         info_teams_id = game.findAll('img', {'class': 'matchTeamLogo'})
         div_empty = game.findAll('div', {'class': 'matchInfoEmpty'})
@@ -81,10 +84,10 @@ def get_matches() -> List[Matches]:
                 team1: Team = get_team(game, info_teams_id, 0)
                 team2: Team = get_team(game, info_teams_id, 1)
 
-                event = event[0].text if event != [] else {}
-                date_hour = date_unix_to_timestamp(
+                name_event: str = event[0].text if event != [] else ''
+                date_unix = date_unix_to_timestamp(
                     date_hour['data-unix']) if date_hour.text != 'LIVE' else date_hour.text
-                match = Matches(id_, team1, team2, event, date_hour)
+                match = Matches(id_, team1, team2, name_event, date_unix)
                 matches.append(match)
 
     return matches
