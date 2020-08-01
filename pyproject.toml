@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "pyhltv"
+version = "0.1.0"
+description = "Repository to extract information from the HLTV website"
+authors = ["Rich <richelton14@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+requests = "^2.24.0"
+bs4 = "^0.0.1"
+
+[tool.poetry.dev-dependencies]
+autopep8 = "^1.5.3"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
