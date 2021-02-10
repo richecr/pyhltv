@@ -31,10 +31,16 @@ def get_team(match: Tag, info_teams_id: List, num_team: int) -> Team:
         team = Team(div_team_empty[0].text)
     else:
         name = divs_teams[num_team].findAll(
-            'div', {'class': 'matchTeamName text-ellipsis'})
-        id = int(info_teams_id[num_team]['src'].split(
-            'https://static.hltv.org/images/team/logo/')[1])
-        team = Team(name[0].text, id)
+            'div', {'class': 'matchTeamName text-ellipsis'})[0]
+        div_id = divs_teams[num_team].findAll(
+            'div', {'class': 'matchTeamScore'})
+        if (div_id == []):
+            team = Team(name.text)
+        else:
+            span_id = div_id[0].findAll(
+                'span', {'class': 'currentMapScore'})[0]
+            id = span_id['data-livescore-team']
+            team = Team(name.text, id)
 
     return team
 
