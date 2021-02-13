@@ -1,9 +1,11 @@
 from py_hltv.Matches import get_matches
 
-matches = get_matches()
+matches = get_matches(force_team_id=True)
 print(len(matches))
 
-for match in matches:
+for i in range(0, len(matches)):
+    match = matches[i]
+
     print(match.id)
     print(match.team1.name)
     print(match.team1.id)

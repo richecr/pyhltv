@@ -1,5 +1,5 @@
 import time
-from typing import List, Tuple
+from typing import List, Tuple,  Union
 
 from bs4.element import Tag
 
@@ -28,28 +28,36 @@ def date_unix_to_timestamp(date_unix: str) -> str:
     return date_hour
 
 
-def concat_url_logo_empty(url: str) -> str:
-    if (url.startswith('/img')):
-        return 'https://www.hltv.org' + url
-    return url
-
-
 def get_logo_url(img_logo_url: List) -> str:
+    """
+    function that obtains the URL of a team's logo.
+
+    PARAMS:
+    ----------
+    `img_logo_url`: URL logo that verifed and concated.
+
+    RETURN:
+    ----------
+    `url_logo`: URL concated.
+    """
+    url_logo = ''
     if (img_logo_url != []):
-        return concat_url_logo_empty(img_logo_url[0]['src'])
-    else:
-        return ''
+        url_logo = img_logo_url[0]['src']
+        if (url_logo.startswith('/img')):
+            url_logo = 'https://www.hltv.org' + url_logo
+
+    return url_logo
 
 
-def get_team(match: Tag, num_team: int) -> Team:
+def get_team(match: Tag, num_team: int, force_team_id: bool) -> Team:
     """
     Function that seeks and treats the information of a team.
 
     PARAMS:
     ----------
-    :param: match: Match in which the team will be found.
-    :param: info_teams_id: BeautifulSoup list with team ID information.
-    :param: num_team: The team to be found (0 or 1).
+    `match`: Match in which the team will be found.
+    `info_teams_id`: BeautifulSoup list with team ID information.
+    `num_team`: The team to be found (0 or 1).
 
     RETURN:
     ----------
@@ -69,24 +77,45 @@ def get_team(match: Tag, num_team: int) -> Team:
             'div', {'class': 'matchTeamScore'})
         img_logo_url = divs_teams[num_team].findAll(
             'img', {'class': 'matchTeamLogo'})
+
+        id_team: Union[int, None] = None
         if (div_id == []):
-            team = Team(name=name.text, logo_url=get_logo_url(img_logo_url))
+            if (force_team_id):
+                soup = get_page(match['href'])
+                class_name = 'team{}-gradient'.format(num_team + 1)
+                div_team = soup.findAll(
+                    'div', {'class': class_name})
+                if (div_team != []):
+                    tag_a_id = div_team[0].findAll('a', limit=1)
+                    if (len(tag_a_id) > 0):
+                        id_team = int(tag_a_id[0]['href'].split('/')[2])
         else:
             span_id = div_id[0].findAll(
                 'span', {'class': 'currentMapScore'})[0]
-            id = span_id['data-livescore-team']
-            team = Team(name.text, id, logo_url=get_logo_url(img_logo_url))
+            id_team = int(span_id['data-livescore-team'])
+
+        team = Team(name.text, id_team,
+                    logo_url=get_logo_url(img_logo_url))
 
     return team
 
 
-def get_teams(match: Tag) -> Tuple[Team, Team]:
-    return get_team(match, 0), get_team(match, 1)
+def get_teams(match: Tag, force_team_id: bool) -> Tuple[Team, Team]:
+    return get_team(match, 0, force_team_id), get_team(match, 1, force_team_id)
 
 
-def get_matches() -> List[Matches]:
+def get_matches(force_team_id: bool = False) -> List[Matches]:
     """
     Function that searches for the information of all matches.
+
+    If you pass `force_team_id` as true, you may experience less performance,
+    as a new request will be made to the HLTV website to get the ids of
+    times.
+
+    PARAMS:
+    ----------
+    - `force_team_id`: if true, the function will make a new request to
+    the site and then get the team IDs.
 
     RETURN:
     ----------
@@ -103,7 +132,7 @@ def get_matches() -> List[Matches]:
             'div', {'class': 'matchEventName gtSmartphone-only'})
         div_empty = game.findAll('div', {'class': 'matchInfoEmpty'})
         if (div_empty == []):
-            team1, team2 = get_teams(game)
+            team1, team2 = get_teams(game, force_team_id)
 
             name_event = str(event[0].text) if event != [] else ''
             date_unix = date_hour.text
