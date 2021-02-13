@@ -1,14 +1,47 @@
 import time
-from typing import List
+from typing import List, Tuple
 
 from bs4.element import Tag
 
-from .types.Team import Team
-from .types.Matches import Matches
+from .models.Team import Team
+from .models.Matches import Matches
 from .utils.api import get_page
 
 
-def get_team(match: Tag, info_teams_id: List, num_team: int) -> Team:
+def date_unix_to_timestamp(date_unix: str) -> str:
+    """
+    Function that convert unix date to human-readable date.
+
+    PARAMS:
+    ----------
+    :param: date_unix: Date in format unix.
+
+    RETURN:
+    ----------
+    date: str in format(dd b yyyy H:M:S +0000)
+        - 08 Aug 2020 16:00:00 +0000
+    """
+    ts = int(date_unix)
+    ts /= 1000
+    date_hour = time.strftime(
+        "%d %b %Y %H:%M:%S +0000", time.localtime(ts))
+    return date_hour
+
+
+def concat_url_logo_empty(url: str) -> str:
+    if (url.startswith('/img')):
+        return 'https://www.hltv.org' + url
+    return url
+
+
+def get_logo_url(img_logo_url: List) -> str:
+    if (img_logo_url != []):
+        return concat_url_logo_empty(img_logo_url[0]['src'])
+    else:
+        return ''
+
+
+def get_team(match: Tag, num_team: int) -> Team:
     """
     Function that seeks and treats the information of a team.
 
@@ -34,35 +67,21 @@ def get_team(match: Tag, info_teams_id: List, num_team: int) -> Team:
             'div', {'class': 'matchTeamName text-ellipsis'})[0]
         div_id = divs_teams[num_team].findAll(
             'div', {'class': 'matchTeamScore'})
+        img_logo_url = divs_teams[num_team].findAll(
+            'img', {'class': 'matchTeamLogo'})
         if (div_id == []):
-            team = Team(name.text)
+            team = Team(name=name.text, logo_url=get_logo_url(img_logo_url))
         else:
             span_id = div_id[0].findAll(
                 'span', {'class': 'currentMapScore'})[0]
             id = span_id['data-livescore-team']
-            team = Team(name.text, id)
+            team = Team(name.text, id, logo_url=get_logo_url(img_logo_url))
 
     return team
 
 
-def date_unix_to_timestamp(date_unix: str) -> str:
-    """
-    Function that convert unix date to human-readable date.
-
-    PARAMS:
-    ----------
-    :param: date_unix: Date in format unix.
-
-    RETURN:
-    ----------
-    date: str in format(dd b yyyy H:M:S +0000)
-        - 08 Aug 2020 16:00:00 +0000
-    """
-    ts = int(date_unix)
-    ts /= 1000
-    date_hour = time.strftime(
-        "%d %b %Y %H:%M:%S +0000", time.localtime(ts))
-    return date_hour
+def get_teams(match: Tag) -> Tuple[Team, Team]:
+    return get_team(match, 0), get_team(match, 1)
 
 
 def get_matches() -> List[Matches]:
@@ -80,20 +99,18 @@ def get_matches() -> List[Matches]:
     for game in rodadas:
         id_ = int(game['href'].split('/')[2])
         date_hour: Tag = game.findAll('div', {'class': 'matchTime'})[0]
-        date_unix: str = ''
         event: List[Tag] = game.findAll(
             'div', {'class': 'matchEventName gtSmartphone-only'})
-        info_teams_id = game.findAll('img', {'class': 'matchTeamLogo'})
         div_empty = game.findAll('div', {'class': 'matchInfoEmpty'})
         if (div_empty == []):
-            if (info_teams_id != []):
-                team1: Team = get_team(game, info_teams_id, 0)
-                team2: Team = get_team(game, info_teams_id, 1)
+            team1, team2 = get_teams(game)
 
-                name_event: str = event[0].text if event != [] else ''
-                date_unix = date_unix_to_timestamp(
-                    date_hour['data-unix']) if date_hour.text != 'LIVE' else date_hour.text
-                match = Matches(id_, team1, team2, name_event, date_unix)
-                matches.append(match)
+            name_event = str(event[0].text) if event != [] else ''
+            date_unix = date_hour.text
+            if (date_hour.text != 'LIVE'):
+                date_unix = date_unix_to_timestamp(date_hour['data-unix'])
+
+            match = Matches(id_, team1, team2, name_event, date_unix)
+            matches.append(match)
 
     return matches

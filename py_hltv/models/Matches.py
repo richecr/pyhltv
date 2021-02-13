@@ -2,7 +2,8 @@ from .Team import Team
 
 
 class Matches:
-    def __init__(self, id: int, team1: Team, team2: Team, event, date_hour: str) -> None:
+    def __init__(self, id: int, team1: Team, team2: Team,
+                 event, date_hour: str) -> None:
         self.id = id
         self.team1 = team1
         self.team2 = team2
