@@ -1,7 +1,7 @@
 from .Team import Team
 
 
-class Matches:
+class Match:
     def __init__(self, id: int, team1: Team, team2: Team,
                  event, date_hour: str) -> None:
         self.id = id

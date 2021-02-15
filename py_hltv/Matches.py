@@ -4,52 +4,52 @@ from typing import List, Tuple,  Union
 from bs4.element import Tag
 
 from .models.Team import Team
-from .models.Matches import Matches
+from .models.Match import Match
 from .utils.api import get_page
 
 
-def date_unix_to_timestamp(date_unix: str) -> str:
+def get_matches() -> List[Match]:
     """
-    Function that convert unix date to human-readable date.
-
-    PARAMS:
-    ----------
-    :param: date_unix: Date in format unix.
+    Function that searches for the information of all matches.
 
     RETURN:
     ----------
-    date: str in format(dd b yyyy H:M:S +0000)
-        - 08 Aug 2020 16:00:00 +0000
+    matches: List[Match]
     """
-    ts = int(date_unix)
-    ts /= 1000
-    date_hour = time.strftime(
-        "%d %b %Y %H:%M:%S +0000", time.localtime(ts))
-    return date_hour
+    soup = get_page('/matches')
+    rounds_upcommingMatch: List[Tag] = soup.findAll(
+        'div', {'class': 'upcomingMatch'})
+    rounds_live: List[Tag] = soup.findAll(
+        'div', {'class': 'liveMatch-container'})
+    rounds = rounds_live + rounds_upcommingMatch
+
+    matches: List[Match] = []
+    for div in rounds:
+        match = div.findAll('a', {'class': 'match a-reset'})[0]
+        id_ = int(match['href'].split('/')[2])
+        date_hour: Tag = match.findAll('div', {'class': 'matchTime'})[0]
+        event: List[Tag] = match.findAll(
+            'div', {'class': 'matchEventName gtSmartphone-only'})
+        div_empty = match.findAll('div', {'class': 'matchInfoEmpty'})
+        if (div_empty == []):
+            team1, team2 = get_teams(div)
+
+            name_event = str(event[0].text) if event != [] else ''
+            date_unix = date_hour.text
+            if (date_hour.text != 'LIVE'):
+                date_unix = date_unix_to_timestamp(date_hour['data-unix'])
+
+            match = Match(id_, team1, team2, name_event, date_unix)
+            matches.append(match)
+
+    return matches
 
 
-def get_logo_url(img_logo_url: List) -> str:
-    """
-    function that obtains the URL of a team's logo.
-
-    PARAMS:
-    ----------
-    `img_logo_url`: URL logo that verifed and concated.
-
-    RETURN:
-    ----------
-    `url_logo`: URL concated.
-    """
-    url_logo = ''
-    if (img_logo_url != []):
-        url_logo = img_logo_url[0]['src']
-        if (url_logo.startswith('/img')):
-            url_logo = 'https://www.hltv.org' + url_logo
-
-    return url_logo
+def get_teams(match: Tag) -> Tuple[Team, Team]:
+    return get_team(match, 0), get_team(match, 1)
 
 
-def get_team(match: Tag, num_team: int, force_team_id: bool) -> Team:
+def get_team(match: Tag, num_team: int) -> Team:
     """
     Function that seeks and treats the information of a team.
 
@@ -80,15 +80,7 @@ def get_team(match: Tag, num_team: int, force_team_id: bool) -> Team:
 
         id_team: Union[int, None] = None
         if (div_id == []):
-            if (force_team_id):
-                soup = get_page(match['href'])
-                class_name = 'team{}-gradient'.format(num_team + 1)
-                div_team = soup.findAll(
-                    'div', {'class': class_name})
-                if (div_team != []):
-                    tag_a_id = div_team[0].findAll('a', limit=1)
-                    if (len(tag_a_id) > 0):
-                        id_team = int(tag_a_id[0]['href'].split('/')[2])
+            id_team = match['team{}'.format(num_team + 1)]
         else:
             span_id = div_id[0].findAll(
                 'span', {'class': 'currentMapScore'})[0]
@@ -100,46 +92,42 @@ def get_team(match: Tag, num_team: int, force_team_id: bool) -> Team:
     return team
 
 
-def get_teams(match: Tag, force_team_id: bool) -> Tuple[Team, Team]:
-    return get_team(match, 0, force_team_id), get_team(match, 1, force_team_id)
-
-
-def get_matches(force_team_id: bool = False) -> List[Matches]:
+def get_logo_url(img_logo_url: List) -> str:
     """
-    Function that searches for the information of all matches.
-
-    If you pass `force_team_id` as true, you may experience less performance,
-    as a new request will be made to the HLTV website to get the ids of
-    times.
+    function that obtains the URL of a team's logo.
 
     PARAMS:
     ----------
-    - `force_team_id`: if true, the function will make a new request to
-    the site and then get the team IDs.
+    `img_logo_url`: URL logo that verifed and concated.
 
     RETURN:
     ----------
-    matches: List[Matches]
+    `url_logo`: URL concated.
     """
-    soup = get_page('/matches')
-    rodadas: List[Tag] = soup.findAll('a', {'class': 'match a-reset'})
+    url_logo = ''
+    if (img_logo_url != []):
+        url_logo = img_logo_url[0]['src']
+        if (url_logo.startswith('/img')):
+            url_logo = 'https://www.hltv.org' + url_logo
 
-    matches: List[Matches] = []
-    for game in rodadas:
-        id_ = int(game['href'].split('/')[2])
-        date_hour: Tag = game.findAll('div', {'class': 'matchTime'})[0]
-        event: List[Tag] = game.findAll(
-            'div', {'class': 'matchEventName gtSmartphone-only'})
-        div_empty = game.findAll('div', {'class': 'matchInfoEmpty'})
-        if (div_empty == []):
-            team1, team2 = get_teams(game, force_team_id)
+    return url_logo
 
-            name_event = str(event[0].text) if event != [] else ''
-            date_unix = date_hour.text
-            if (date_hour.text != 'LIVE'):
-                date_unix = date_unix_to_timestamp(date_hour['data-unix'])
 
-            match = Matches(id_, team1, team2, name_event, date_unix)
-            matches.append(match)
+def date_unix_to_timestamp(date_unix: str) -> str:
+    """
+    Function that convert unix date to human-readable date.
 
-    return matches
+    PARAMS:
+    ----------
+    :param: date_unix: Date in format unix.
+
+    RETURN:
+    ----------
+    date: str in format(dd b yyyy H:M:S +0000)
+        - 08 Aug 2020 16:00:00 +0000
+    """
+    ts = int(date_unix)
+    ts /= 1000
+    date_hour = time.strftime(
+        "%d %b %Y %H:%M:%S +0000", time.localtime(ts))
+    return date_hour

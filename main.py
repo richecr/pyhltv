@@ -1,6 +1,6 @@
 from py_hltv.Matches import get_matches
 
-matches = get_matches(force_team_id=True)
+matches = get_matches()
 print(len(matches))
 
 for i in range(0, len(matches)):
