@@ -1,6 +1,8 @@
-from py_hltv.Matches import get_matches
+# Import Matches features from the library
+from py_hltv import Matches
 
-matches = get_matches()
+# Return the List of Matches.
+matches = Matches.get_matches()
 print(len(matches))
 
 for i in range(0, len(matches)):
