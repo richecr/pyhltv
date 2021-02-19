@@ -32,12 +32,12 @@ def get_matches() -> List[Match]:
             'div', {'class': 'matchEventName gtSmartphone-only'})
         div_empty = match.findAll('div', {'class': 'matchInfoEmpty'})
         if (div_empty == []):
-            team1, team2 = get_teams(div)
+            team1, team2 = _get_teams(div)
 
             name_event = str(event[0].text) if event != [] else ''
             date_unix = date_hour.text
             if (date_hour.text != 'LIVE'):
-                date_unix = date_unix_to_timestamp(date_hour['data-unix'])
+                date_unix = _date_unix_to_timestamp(date_hour['data-unix'])
 
             match = Match(id_, team1, team2, name_event, date_unix)
             matches.append(match)
@@ -45,11 +45,11 @@ def get_matches() -> List[Match]:
     return matches
 
 
-def get_teams(match: Tag) -> Tuple[Team, Team]:
-    return get_team(match, 0), get_team(match, 1)
+def _get_teams(match: Tag) -> Tuple[Team, Team]:
+    return _get_team(match, 0), _get_team(match, 1)
 
 
-def get_team(match: Tag, num_team: int) -> Team:
+def _get_team(match: Tag, num_team: int) -> Team:
     """
     Function that seeks and treats the information of a team.
 
@@ -87,12 +87,12 @@ def get_team(match: Tag, num_team: int) -> Team:
             id_team = int(span_id['data-livescore-team'])
 
         team = Team(name.text, id_team,
-                    logo_url=get_logo_url(img_logo_url))
+                    logo_url=_get_logo_url(img_logo_url))
 
     return team
 
 
-def get_logo_url(img_logo_url: List) -> str:
+def _get_logo_url(img_logo_url: List) -> str:
     """
     function that obtains the URL of a team's logo.
 
@@ -113,7 +113,7 @@ def get_logo_url(img_logo_url: List) -> str:
     return url_logo
 
 
-def date_unix_to_timestamp(date_unix: str) -> str:
+def _date_unix_to_timestamp(date_unix: str) -> str:
     """
     Function that convert unix date to human-readable date.
 
