@@ -1,11 +1,11 @@
 # Import Matches features from the library
-from py_hltv import Matches
+from pyhltv import get_matches
 
 # Return the List of Matches.
-matches = Matches.get_matches()
+matches = get_matches()
 print(len(matches))
 
-for i in range(0, len(matches)):
+for i in range(len(matches)):
     match = matches[i]
 
     print(match.id)
@@ -21,3 +21,4 @@ for i in range(0, len(matches)):
     print(match.event)
 
     print("-------------------")
+    break

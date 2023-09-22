@@ -5,12 +5,12 @@ description = "Repository to extract information from the HLTV website"
 authors = ["Rich <richelton14@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.11.5"
 requests = "^2.24.0"
-bs4 = "^0.0.1"
-
-[tool.poetry.dev-dependencies]
-autopep8 = "^1.5.3"
+beautifulsoup4 = "^4.12.2"
+selenium = "^4.12.0"
+webdriver-manager = "^4.0.0"
+undetected-chromedriver = "^3.5.3"
 
 [build-system]
 requires = ["poetry>=0.12"]
