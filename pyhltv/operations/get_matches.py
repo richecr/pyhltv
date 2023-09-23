@@ -2,9 +2,9 @@ import time
 from bs4.element import Tag
 from typing import List, Tuple, Union
 
-from .models.team import Team
-from .models.match import Match
-from .utils.api import get_page
+from ..utils.api import get_page
+from ..models.team import Team
+from ..models.match import Match
 
 
 def get_matches() -> List[Match]:
@@ -37,7 +37,9 @@ def get_matches() -> List[Match]:
             if date_hour.text != "LIVE":
                 date_unix = _date_unix_to_timestamp(date_hour["data-unix"])
 
-            match = Match(id_, team1, team2, name_event, date_unix)
+            match = Match(
+                id=id_, team1=team1, team2=team2, event=name_event, date_hour=date_unix
+            )
             matches.append(match)
 
     return matches
@@ -54,42 +56,42 @@ def _get_team(match: Tag, num_team: int) -> Team:
     PARAMS:
     ----------
     `match`: Match in which the team will be found.
-    `info_teams_id`: BeautifulSoup list with team ID information.
     `num_team`: The team to be found (0 or 1).
 
     RETURN:
     ----------
     team: Team
     """
-    team: Team
     divs_teams = match.findAll("div", {"class": "matchTeam"})
     div_team_empty = divs_teams[num_team].findAll(
         "div", {"class": "team text-ellipsis"}
     )
-    if div_team_empty != []:
-        team = Team(div_team_empty[0].text)
+    if div_team_empty == []:
+        return _get_info_team(divs_teams, num_team, match)
+
+    return Team(name=div_team_empty[0].text)
+
+
+def _get_info_team(divs_teams, num_team, match):
+    name = divs_teams[num_team].findAll(
+        "div", {"class": "matchTeamName text-ellipsis"}
+    )[0]
+    div_id = divs_teams[num_team].findAll("div", {"class": "matchTeamScore"})
+    img_logo_url = divs_teams[num_team].findAll("img", {"class": "matchTeamLogo"})
+
+    id_team: Union[int, None] = None
+    if div_id == []:
+        id_team = match[f"team{num_team + 1}"]
     else:
-        name = divs_teams[num_team].findAll(
-            "div", {"class": "matchTeamName text-ellipsis"}
-        )[0]
-        div_id = divs_teams[num_team].findAll("div", {"class": "matchTeamScore"})
-        img_logo_url = divs_teams[num_team].findAll("img", {"class": "matchTeamLogo"})
+        span_id = div_id[0].findAll("span", {"class": "currentMapScore"})[0]
+        id_team = int(span_id["data-livescore-team"])
 
-        id_team: Union[int, None] = None
-        if div_id == []:
-            id_team = match["team{}".format(num_team + 1)]
-        else:
-            span_id = div_id[0].findAll("span", {"class": "currentMapScore"})[0]
-            id_team = int(span_id["data-livescore-team"])
-
-        team = Team(name.text, id_team, logo_url=_get_logo_url(img_logo_url))
-
-    return team
+    return Team(id=id_team, name=name.text, logo_url=_get_logo_url(img_logo_url))
 
 
 def _get_logo_url(img_logo_url: List) -> str:
     """
-    function that obtains the URL of a team's logo.
+    Function that obtains the URL of a team's logo.
 
     PARAMS:
     ----------

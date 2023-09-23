@@ -1,12 +1,10 @@
-from time import sleep
 from bs4 import BeautifulSoup
-import undetected_chromedriver as uc
 
+from ..driver import get_driver
 from ..constants import api
 
 
 def get_page(url: str) -> BeautifulSoup:
-    options = uc.ChromeOptions()
-    driver = uc.Chrome(options=options)
+    driver = get_driver()
     driver.get(api.BASE_URL + url)
     return BeautifulSoup(markup=driver.page_source, features="html.parser")

@@ -1,8 +1,7 @@
-class Team:
-    def __init__(self, name: str, id: int = None, logo_url: str = "") -> None:
-        self.name = name
-        self.id = id
-        self.logo_url = logo_url
+from pydantic import BaseModel
 
-    def __str__(self) -> str:
-        return self.name
+
+class Team(BaseModel):
+    id: int = 0
+    name: str = ""
+    logo_url: str = ""
