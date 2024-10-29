@@ -1,10 +1,11 @@
 import time
-from bs4.element import Tag
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
-from ..utils.api import get_page
-from ..models.team import Team
+from bs4.element import Tag
+
 from ..models.match import Match
+from ..models.team import Team
+from ..utils.api import get_page
 
 
 def get_matches() -> List[Match]:
@@ -20,26 +21,26 @@ def get_matches() -> List[Match]:
     rounds_live: List[Tag] = soup.findAll("div", {"class": "liveMatch"})
     rounds = rounds_live + rounds_upcommingMatch
 
-    matches: List[Match] = []
     for div in rounds:
         match = div.findAll("a", {"class": "match a-reset"})[0]
         id_ = int(match["href"].split("/")[2])
         date_hour: Tag = match.findAll("div", {"class": "matchTime"})[0]
-        event: List[Tag] = match.findAll(
-            "div", {"class": "matchEventName gtSmartphone-only"}
-        )
+        event: List[Tag] = match.findAll("div", {"class": "matchEventName gtSmartphone-only"})
         div_empty = match.findAll("div", {"class": "matchInfoEmpty"})
+        matches: List[Match] = []
         if div_empty == []:
             team1, team2 = _get_teams(div)
 
             name_event = str(event[0].text) if event != [] else ""
             date_unix = date_hour.text
             if date_hour.text != "LIVE":
-                date_unix = _date_unix_to_timestamp(date_hour["data-unix"])
+                dt_unix = date_hour["data-unix"]
+                if not isinstance(dt_unix, str):
+                    date_unix = _date_unix_to_timestamp(dt_unix[0])
+                else:
+                    date_unix = _date_unix_to_timestamp(dt_unix)
 
-            match = Match(
-                id=id_, team1=team1, team2=team2, event=name_event, date_hour=date_unix
-            )
+            match = Match(id=id_, team1=team1, team2=team2, event=name_event, date_hour=date_unix)
             matches.append(match)
 
     return matches
@@ -63,23 +64,19 @@ def _get_team(match: Tag, num_team: int) -> Team:
     team: Team
     """
     divs_teams = match.findAll("div", {"class": "matchTeam"})
-    div_team_empty = divs_teams[num_team].findAll(
-        "div", {"class": "team text-ellipsis"}
-    )
+    div_team_empty = divs_teams[num_team].findAll("div", {"class": "team text-ellipsis"})
     if div_team_empty == []:
         return _get_info_team(divs_teams, num_team, match)
 
     return Team(name=div_team_empty[0].text)
 
 
-def _get_info_team(divs_teams, num_team, match):
-    name = divs_teams[num_team].findAll(
-        "div", {"class": "matchTeamName text-ellipsis"}
-    )[0]
+def _get_info_team(divs_teams, num_team, match) -> Team:
+    name = divs_teams[num_team].findAll("div", {"class": "matchTeamName text-ellipsis"})[0]
     div_id = divs_teams[num_team].findAll("div", {"class": "matchTeamScore"})
     img_logo_url = divs_teams[num_team].findAll("img", {"class": "matchTeamLogo"})
 
-    id_team: Union[int, None] = None
+    id_team: int = -1
     if div_id == []:
         id_team = match[f"team{num_team + 1}"]
     else:

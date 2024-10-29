@@ -11,6 +11,9 @@ undetected-chromedriver = "^3.5.3"
 selenium-stealth = "^1.0.6"
 pydantic = "^2.3.0"
 
+[tool.poetry.group.dev.dependencies]
+types-beautifulsoup4 = "^4.12.0.20241020"
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"

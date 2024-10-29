@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 
-from ..driver import get_driver
 from ..constants import api
+from ..driver import get_driver
 
 
 def get_page(url: str) -> BeautifulSoup:

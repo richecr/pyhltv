@@ -1,6 +1,14 @@
 {
-  "python.defaultInterpreterPath": "/home/richecr/.cache/pypoetry/virtualenvs/pyhltv-9HnTGGCJ-py3.11/bin/python",
-  "[python]": {
-      "editor.defaultFormatter": "ms-python.black-formatter"
-  }
+    "python.defaultInterpreterPath": "/home/richecr/.cache/pypoetry/virtualenvs/pyhltv-4edfarPM-py3.12/bin/python",
+    "ruff.lint.args": ["--config=/home/richecr/projects/pyhltv/ruff.toml"],
+    "ruff.format.args": ["--config=/home/richecr/projects/pyhltv/ruff.toml"],
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll": "explicit",
+            "source.organizeImports": "explicit"
+        },
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    },
+    "mypy.configFile": "/home/richecr/projects/pyhltv/ruff.toml"
 }

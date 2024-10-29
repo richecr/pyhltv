@@ -1,6 +1,6 @@
-from .team import Team
-
 from pydantic import BaseModel
+
+from .team import Team
 
 
 class Match(BaseModel):

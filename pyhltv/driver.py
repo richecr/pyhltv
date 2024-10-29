@@ -1,5 +1,5 @@
-from selenium_stealth import stealth
 import undetected_chromedriver as uc
+from selenium_stealth import stealth
 
 
 def get_driver():
